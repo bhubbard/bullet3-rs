@@ -1,0 +1,38 @@
+[package]
+name = "bullet3-rs"
+version = "0.1.0"
+edition = "2021"
+authors = ["Brandon Hubbard"]
+description = "A high-performance pure Rust port and fork of the Bullet 3 Physics SDK for real-time 3D rigid body dynamics, collision detection, and multi-body constraints"
+license = "Zlib OR MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/bhubbard/bullet3-rs"
+keywords = ["physics", "bullet3", "collision-detection", "rigid-body", "simulation"]
+categories = ["game-development", "simulation", "science", "mathematics"]
+
+[lib]
+name = "bullet3"
+path = "src/lib.rs"
+
+[[bin]]
+name = "bullet3"
+path = "src/main.rs"
+required-features = ["cli"]
+
+[features]
+default = ["cli", "serde"]
+cli = ["dep:clap"]
+serde = ["dep:serde", "dep:serde_json"]
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"], optional = true }
+serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
+
+[dev-dependencies]
+approx = "0.5"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
