@@ -12,6 +12,7 @@ pub enum CollisionFlags {
     Static = 1,
     Kinematic = 2,
     Dynamic = 4,
+    Ghost = 8,
 }
 
 /// Generic collision object. Equivalent to Bullet's `btCollisionObject`.
@@ -23,6 +24,8 @@ pub struct CollisionObject {
     pub friction: f32,
     pub restitution: f32,
     pub collision_flags: CollisionFlags,
+    pub collision_filter_group: i16,
+    pub collision_filter_mask: i16,
     pub user_index: i32,
 }
 
@@ -35,7 +38,30 @@ impl CollisionObject {
             friction: 0.5,
             restitution: 0.0,
             collision_flags: CollisionFlags::Dynamic,
+            collision_filter_group: 1,
+            collision_filter_mask: -1,
             user_index: -1,
+        }
+    }
+}
+
+/// Sensor / Trigger ghost object that tracks overlapping objects without collision response.
+/// Direct equivalent to Bullet's `btGhostObject` / `btPairCachingGhostObject`.
+#[derive(Debug, Clone)]
+pub struct GhostObject {
+    pub id: usize,
+    pub shape: Shape,
+    pub transform: Transform,
+    pub overlapping_objects: Vec<usize>,
+}
+
+impl GhostObject {
+    pub fn new(id: usize, shape: Shape, transform: Transform) -> Self {
+        Self {
+            id,
+            shape,
+            transform,
+            overlapping_objects: Vec::new(),
         }
     }
 }

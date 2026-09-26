@@ -46,15 +46,17 @@ pub mod linear_math;
 pub mod prelude {
     pub use crate::collision::{
         BoxShape, BroadphasePair, CapsuleShape, CollisionFlags, CollisionObject, CollisionWorld,
-        CompoundShape, ConvexHullShape, CylinderShape, DbvtBroadphase, RayTestResult, Shape,
-        ShapeType, SphereShape, StaticPlaneShape,
+        CompoundShape, ConeShape, ConvexHullShape, CylinderShape, DbvtBroadphase, GhostObject,
+        RayTestResult, Shape, ShapeType, SphereShape, StaticPlaneShape,
     };
     pub use crate::dynamics::{
-        Constraint, DiscreteDynamicsWorld, DistanceConstraint, HingeConstraint, MotionType,
-        Point2PointConstraint, RigidBody, RigidBodyConstructionInfo,
-        SequentialImpulseConstraintSolver,
+        ConeTwistConstraint, Constraint, DiscreteDynamicsWorld, DistanceConstraint, HingeConstraint,
+        KinematicCharacterController, MotionType, Point2PointConstraint, RaycastVehicle, RigidBody,
+        RigidBodyConstructionInfo, SequentialImpulseConstraintSolver, SliderConstraint, WheelInfo,
     };
-    pub use crate::linear_math::{Aabb, Matrix3x3, Quaternion, Transform, Vector3};
+    pub use crate::linear_math::{
+        Aabb, DefaultMotionState, Matrix3x3, MotionState, Quaternion, Transform, Vector3,
+    };
 }
 
 pub use prelude::*;

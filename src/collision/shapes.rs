@@ -14,6 +14,7 @@ pub enum ShapeType {
     StaticPlane,
     ConvexHull,
     Compound,
+    Cone,
 }
 
 /// Dynamic collision shape enum providing fast dispatch and zero-allocation handling.
@@ -27,6 +28,7 @@ pub enum Shape {
     StaticPlane(StaticPlaneShape),
     ConvexHull(ConvexHullShape),
     Compound(CompoundShape),
+    Cone(ConeShape),
 }
 
 impl Shape {
@@ -39,6 +41,7 @@ impl Shape {
             Shape::StaticPlane(_) => ShapeType::StaticPlane,
             Shape::ConvexHull(_) => ShapeType::ConvexHull,
             Shape::Compound(_) => ShapeType::Compound,
+            Shape::Cone(_) => ShapeType::Cone,
         }
     }
 
@@ -56,6 +59,7 @@ impl Shape {
             Shape::StaticPlane(_) => Vector3::ZERO,
             Shape::ConvexHull(hull) => hull.calculate_local_inertia(mass),
             Shape::Compound(comp) => comp.calculate_local_inertia(mass),
+            Shape::Cone(cone) => cone.calculate_local_inertia(mass),
         }
     }
 
@@ -69,6 +73,7 @@ impl Shape {
             Shape::StaticPlane(p) => p.calculate_local_aabb(),
             Shape::ConvexHull(hull) => hull.calculate_local_aabb(),
             Shape::Compound(comp) => comp.calculate_local_aabb(),
+            Shape::Cone(cone) => cone.calculate_local_aabb(),
         }
     }
 
@@ -80,7 +85,12 @@ impl Shape {
                 let center = transform.origin;
                 Aabb::new(center - Vector3::splat(r), center + Vector3::splat(r))
             }
-            Shape::Box(_) | Shape::ConvexHull(_) | Shape::Compound(_) | Shape::Capsule(_) | Shape::Cylinder(_) => {
+            Shape::Box(_)
+            | Shape::ConvexHull(_)
+            | Shape::Compound(_)
+            | Shape::Capsule(_)
+            | Shape::Cylinder(_)
+            | Shape::Cone(_) => {
                 let local = self.calculate_local_aabb();
                 local.transform(transform)
             }
@@ -98,6 +108,7 @@ impl Shape {
             Shape::StaticPlane(p) => p.local_supporting_vertex(dir),
             Shape::ConvexHull(hull) => hull.local_supporting_vertex(dir),
             Shape::Compound(_) => Vector3::ZERO,
+            Shape::Cone(cone) => cone.local_supporting_vertex(dir),
         }
     }
 
@@ -110,6 +121,7 @@ impl Shape {
             Shape::StaticPlane(_) => 0.0,
             Shape::ConvexHull(hull) => hull.margin,
             Shape::Compound(_) => 0.0,
+            Shape::Cone(cone) => cone.margin,
         }
     }
 }
@@ -423,5 +435,67 @@ impl CompoundShape {
 impl Default for CompoundShape {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Cone collision shape aligned along the Y axis (`btConeShape`).
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct ConeShape {
+    pub radius: f32,
+    pub height: f32,
+    pub margin: f32,
+}
+
+impl ConeShape {
+    pub fn new(radius: f32, height: f32) -> Self {
+        Self {
+            radius,
+            height,
+            margin: 0.04,
+        }
+    }
+
+    pub fn calculate_local_inertia(&self, mass: f32) -> Vector3 {
+        let r = self.radius;
+        let h = self.height;
+        let iy = 0.3 * mass * r * r;
+        let ixz = (3.0 / 80.0) * mass * (4.0 * r * r + h * h);
+        Vector3::new(ixz, iy, ixz)
+    }
+
+    pub fn calculate_local_aabb(&self) -> Aabb {
+        let half_h = self.height * 0.5 + self.margin;
+        let r = self.radius + self.margin;
+        Aabb::new(Vector3::new(-r, -half_h, -r), Vector3::new(r, half_h, r))
+    }
+
+    pub fn local_supporting_vertex(&self, dir: Vector3) -> Vector3 {
+        let half_h = self.height * 0.5;
+        // Apex is at (0, half_h, 0)
+        let apex = Vector3::new(0.0, half_h, 0.0);
+        let apex_dot = apex.dot(dir);
+
+        // Base disk at y = -half_h
+        let planar = Vector3::new(dir.x, 0.0, dir.z);
+        let planar_len = planar.length();
+        let base_pt = if planar_len > 1e-6 {
+            Vector3::new(
+                dir.x / planar_len * self.radius,
+                -half_h,
+                dir.z / planar_len * self.radius,
+            )
+        } else {
+            Vector3::new(0.0, -half_h, 0.0)
+        };
+
+        let base_dot = base_pt.dot(dir);
+        let best = if apex_dot > base_dot { apex } else { base_pt };
+
+        if self.margin > 0.0 {
+            best + dir.normalize() * self.margin
+        } else {
+            best
+        }
     }
 }

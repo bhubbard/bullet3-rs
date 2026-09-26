@@ -191,6 +191,16 @@ impl DiscreteDynamicsWorld {
 
     /// Raycast test against all bodies in the world.
     pub fn ray_test(&self, ray_from: Vector3, ray_to: Vector3) -> Option<RayTestResult> {
+        self.ray_test_filtered(ray_from, ray_to, None)
+    }
+
+    /// Raycast test with an optional body ID to ignore (e.g. self-intersection filtering).
+    pub fn ray_test_filtered(
+        &self,
+        ray_from: Vector3,
+        ray_to: Vector3,
+        ignore_body_id: Option<usize>,
+    ) -> Option<RayTestResult> {
         let candidate_ids = self.broadphase.ray_test(ray_from, ray_to);
         let ray_dir = ray_to - ray_from;
         let ray_len = ray_dir.length();
@@ -202,6 +212,9 @@ impl DiscreteDynamicsWorld {
         let mut best_result = None;
 
         for id in candidate_ids {
+            if Some(id) == ignore_body_id {
+                continue;
+            }
             let body = match self.bodies.get(id) {
                 Some(Some(b)) => b,
                 _ => continue,

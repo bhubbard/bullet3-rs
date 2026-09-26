@@ -202,6 +202,21 @@ impl Matrix3x3 {
     }
 
     #[inline]
+    pub fn times_transpose(&self, other: &Self) -> Self {
+        *self * other.transpose()
+    }
+
+    #[inline]
+    pub fn transpose_times(&self, other: &Self) -> Self {
+        self.transpose() * *other
+    }
+
+    #[inline]
+    pub fn mul_transpose_vector(&self, v: Vector3) -> Vector3 {
+        self.transpose() * v
+    }
+
+    #[inline]
     pub fn scaled(&self, scale: Vector3) -> Self {
         Self {
             m: [

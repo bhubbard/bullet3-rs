@@ -315,3 +315,235 @@ impl Constraint for HingeConstraint {
         self.p2p.solve_position(bodies);
     }
 }
+
+/// Slider (prismatic) joint constraint allowing 1D translation along an axis (`btSliderConstraint`).
+pub struct SliderConstraint {
+    pub body_a: usize,
+    pub body_b: usize,
+    pub pivot_in_a: Vector3,
+    pub pivot_in_b: Vector3,
+    pub slider_axis_in_a: Vector3,
+    pub lower_limit: f32,
+    pub upper_limit: f32,
+
+    axis_world: Vector3,
+    perp1_world: Vector3,
+    perp2_world: Vector3,
+    bias_perp1: f32,
+    bias_perp2: f32,
+    bias_limit: f32,
+    limit_impulse: f32,
+    is_limit_active: bool,
+}
+
+impl SliderConstraint {
+    pub fn new(
+        body_a: usize,
+        body_b: usize,
+        pivot_in_a: Vector3,
+        pivot_in_b: Vector3,
+        slider_axis_in_a: Vector3,
+        lower_limit: f32,
+        upper_limit: f32,
+    ) -> Self {
+        Self {
+            body_a,
+            body_b,
+            pivot_in_a,
+            pivot_in_b,
+            slider_axis_in_a: slider_axis_in_a.normalize(),
+            lower_limit,
+            upper_limit,
+            axis_world: Vector3::X,
+            perp1_world: Vector3::Y,
+            perp2_world: Vector3::Z,
+            bias_perp1: 0.0,
+            bias_perp2: 0.0,
+            bias_limit: 0.0,
+            limit_impulse: 0.0,
+            is_limit_active: false,
+        }
+    }
+}
+
+impl Constraint for SliderConstraint {
+    fn body_a(&self) -> usize {
+        self.body_a
+    }
+
+    fn body_b(&self) -> usize {
+        self.body_b
+    }
+
+    fn prepare(&mut self, bodies: &[Option<RigidBody>], dt: f32) {
+        let (a, b) = match (bodies.get(self.body_a), bodies.get(self.body_b)) {
+            (Some(Some(a)), Some(Some(b))) => (a, b),
+            _ => return,
+        };
+
+        let axis = a.transform.transform_vector(self.slider_axis_in_a).normalize();
+        self.axis_world = axis;
+
+        let p1 = if axis.x.abs() > 0.57735 {
+            Vector3::new(axis.y, -axis.x, 0.0).normalize()
+        } else {
+            Vector3::new(0.0, axis.z, -axis.y).normalize()
+        };
+        self.perp1_world = p1;
+        self.perp2_world = axis.cross(p1).normalize();
+
+        let pos_a = a.transform.transform_point(self.pivot_in_a);
+        let pos_b = b.transform.transform_point(self.pivot_in_b);
+        let diff = pos_a - pos_b;
+
+        let proj_perp1 = diff.dot(self.perp1_world);
+        let proj_perp2 = diff.dot(self.perp2_world);
+        let proj_axis = diff.dot(self.axis_world);
+
+        self.bias_perp1 = (0.2 / dt) * proj_perp1;
+        self.bias_perp2 = (0.2 / dt) * proj_perp2;
+
+        if proj_axis < self.lower_limit {
+            self.is_limit_active = true;
+            self.bias_limit = (0.2 / dt) * (proj_axis - self.lower_limit);
+        } else if proj_axis > self.upper_limit {
+            self.is_limit_active = true;
+            self.bias_limit = (0.2 / dt) * (proj_axis - self.upper_limit);
+        } else {
+            self.is_limit_active = false;
+            self.bias_limit = 0.0;
+        }
+    }
+
+    fn solve_velocity(&mut self, bodies: &mut [Option<RigidBody>]) {
+        let (v_a, inv_m_a, v_b, inv_m_b) = match (
+            bodies.get(self.body_a),
+            bodies.get(self.body_b),
+        ) {
+            (Some(Some(a)), Some(Some(b))) => (a.linear_velocity, a.inv_mass, b.linear_velocity, b.inv_mass),
+            _ => return,
+        };
+
+        let inv_m = inv_m_a + inv_m_b;
+        if inv_m < 1e-8 {
+            return;
+        }
+
+        let rel_v = v_a - v_b;
+
+        // Solve perpendicular translation lock
+        for &(dir, bias) in &[
+            (self.perp1_world, self.bias_perp1),
+            (self.perp2_world, self.bias_perp2),
+        ] {
+            let lambda = -(rel_v.dot(dir) + bias) / inv_m;
+            let imp = dir * lambda;
+            if let Some(Some(a)) = bodies.get_mut(self.body_a) {
+                a.linear_velocity += imp * inv_m_a;
+            }
+            if let Some(Some(b)) = bodies.get_mut(self.body_b) {
+                b.linear_velocity -= imp * inv_m_b;
+            }
+        }
+
+        // Solve linear limits along slider axis
+        if self.is_limit_active {
+            let lambda = -(rel_v.dot(self.axis_world) + self.bias_limit) / inv_m;
+            self.limit_impulse += lambda;
+            let imp = self.axis_world * lambda;
+            if let Some(Some(a)) = bodies.get_mut(self.body_a) {
+                a.linear_velocity += imp * inv_m_a;
+            }
+            if let Some(Some(b)) = bodies.get_mut(self.body_b) {
+                b.linear_velocity -= imp * inv_m_b;
+            }
+        }
+    }
+
+    fn solve_position(&mut self, _bodies: &mut [Option<RigidBody>]) {}
+}
+
+/// Cone-Twist constraint for ragdoll joints, shoulders, and hips (`btConeTwistConstraint`).
+pub struct ConeTwistConstraint {
+    pub body_a: usize,
+    pub body_b: usize,
+    pub pivot_in_a: Vector3,
+    pub pivot_in_b: Vector3,
+    pub swing_span_1: f32,
+    pub swing_span_2: f32,
+    pub twist_span: f32,
+
+    p2p: Point2PointConstraint,
+}
+
+impl ConeTwistConstraint {
+    pub fn new(
+        body_a: usize,
+        body_b: usize,
+        pivot_in_a: Vector3,
+        pivot_in_b: Vector3,
+        swing_span_1: f32,
+        swing_span_2: f32,
+        twist_span: f32,
+    ) -> Self {
+        Self {
+            body_a,
+            body_b,
+            pivot_in_a,
+            pivot_in_b,
+            swing_span_1,
+            swing_span_2,
+            twist_span,
+            p2p: Point2PointConstraint::new(body_a, body_b, pivot_in_a, pivot_in_b),
+        }
+    }
+}
+
+impl Constraint for ConeTwistConstraint {
+    fn body_a(&self) -> usize {
+        self.body_a
+    }
+
+    fn body_b(&self) -> usize {
+        self.body_b
+    }
+
+    fn prepare(&mut self, bodies: &[Option<RigidBody>], dt: f32) {
+        self.p2p.prepare(bodies, dt);
+    }
+
+    fn solve_velocity(&mut self, bodies: &mut [Option<RigidBody>]) {
+        self.p2p.solve_velocity(bodies);
+
+        // Check relative orientation cone limits
+        let (a, b) = match (bodies.get(self.body_a), bodies.get(self.body_b)) {
+            (Some(Some(a)), Some(Some(b))) => (a, b),
+            _ => return,
+        };
+
+        let diff_q = a.transform.rotation() * b.transform.rotation().inverse();
+        let (axis, angle) = diff_q.to_axis_angle();
+
+        let max_span = self.swing_span_1.max(self.swing_span_2);
+        if angle > max_span {
+            let error = angle - max_span;
+            let rel_ang_vel = (a.angular_velocity - b.angular_velocity).dot(axis);
+            let inv_i_sum = a.inv_inertia_world + b.inv_inertia_world;
+            let k = axis.dot(inv_i_sum * axis);
+            if k > 1e-8 {
+                let lambda = -(rel_ang_vel + 0.2 * error) / k;
+                let imp = axis * lambda;
+                if let Some(Some(a)) = bodies.get_mut(self.body_a) {
+                    a.angular_velocity += a.inv_inertia_world * imp;
+                }
+                if let Some(Some(b)) = bodies.get_mut(self.body_b) {
+                    b.angular_velocity -= b.inv_inertia_world * imp;
+                }
+            }
+        }
+    }
+
+    fn solve_position(&mut self, bodies: &mut [Option<RigidBody>]) {
+        self.p2p.solve_position(bodies);
+    }
+}

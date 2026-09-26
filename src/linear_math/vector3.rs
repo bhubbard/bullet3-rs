@@ -1,3 +1,4 @@
+use super::quaternion::Quaternion;
 use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign};
 
 #[cfg(feature = "serde")]
@@ -117,6 +118,27 @@ impl Vector3 {
     #[inline]
     pub fn lerp(self, other: Self, t: f32) -> Self {
         self + (other - self) * t
+    }
+
+    #[inline]
+    pub fn triple(self, v1: Self, v2: Self) -> f32 {
+        self.dot(v1.cross(v2))
+    }
+
+    #[inline]
+    pub fn angle(self, other: Self) -> f32 {
+        let s = (self.length_squared() * other.length_squared()).sqrt();
+        if s > 1e-12 {
+            (self.dot(other) / s).clamp(-1.0, 1.0).acos()
+        } else {
+            0.0
+        }
+    }
+
+    #[inline]
+    pub fn rotate(self, axis: Self, angle_radians: f32) -> Self {
+        let q = Quaternion::from_axis_angle(axis, angle_radians);
+        q.rotate_vector(self)
     }
 
     #[inline]
