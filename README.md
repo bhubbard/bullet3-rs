@@ -5,8 +5,11 @@ A high-performance, deterministic 3D rigid body dynamics and collision detection
 Forked and ported from the industry-standard [Bullet 3 Physics SDK](https://github.com/bulletphysics/bullet3) by Erwin Coumans.
 
 [![CI](https://github.com/bhubbard/bullet3-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/bhubbard/bullet3-rs/actions)
+[![GitHub Pages](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-brightgreen?logo=github)](https://bhubbard.github.io/bullet3-rs/)
 [![License: Zlib/MIT/Apache-2.0](https://img.shields.io/badge/license-Zlib%20%7C%20MIT%20%7C%20Apache--2.0-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-2021%20edition-orange.svg)](https://www.rust-lang.org)
+
+🎮 **[Explore the Live Interactive 3D Physics Visualizer](https://bhubbard.github.io/bullet3-rs/)**
 
 ---
 
