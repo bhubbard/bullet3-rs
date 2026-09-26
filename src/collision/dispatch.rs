@@ -214,7 +214,7 @@ fn ray_test_shape(
                 t = (-b + sqrt_d) / (2.0 * a);
             }
 
-            if t >= 0.0 && t <= 1.0 {
+            if (0.0..=1.0).contains(&t) {
                 let local_hit = local_from + local_dir * t;
                 let local_norm = local_hit.normalize();
                 let world_norm = transform.transform_vector(local_norm).normalize();
@@ -226,7 +226,7 @@ fn ray_test_shape(
         Shape::Box(b) => {
             let aabb = b.calculate_local_aabb();
             let t = aabb.ray_test(local_from, local_to)?;
-            if t >= 0.0 && t <= 1.0 {
+            if (0.0..=1.0).contains(&t) {
                 let local_hit = local_from + local_dir * t;
                 let h = b.half_extents;
                 let mut norm = Vector3::Y;
@@ -252,7 +252,7 @@ fn ray_test_shape(
             let denom = local_dir.dot(p.plane_normal);
             if denom.abs() > 1e-6 {
                 let t = (p.plane_constant - local_from.dot(p.plane_normal)) / denom;
-                if t >= 0.0 && t <= 1.0 {
+                if (0.0..=1.0).contains(&t) {
                     let world_norm = transform.transform_vector(p.plane_normal).normalize();
                     return Some((t, world_norm));
                 }
@@ -263,7 +263,7 @@ fn ray_test_shape(
             // General local AABB fallback
             let aabb = shape.calculate_local_aabb();
             let t = aabb.ray_test(local_from, local_to)?;
-            if t >= 0.0 && t <= 1.0 {
+            if (0.0..=1.0).contains(&t) {
                 Some((t, Vector3::Y))
             } else {
                 None

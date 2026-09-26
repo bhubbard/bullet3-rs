@@ -289,13 +289,13 @@ impl Add for Matrix3x3 {
     type Output = Self;
     #[inline]
     fn add(self, rhs: Self) -> Self {
-        let mut m = [[0.0; 3]; 3];
-        for i in 0..3 {
-            for j in 0..3 {
-                m[i][j] = self.m[i][j] + rhs.m[i][j];
-            }
+        Self {
+            m: [
+                [self.m[0][0] + rhs.m[0][0], self.m[0][1] + rhs.m[0][1], self.m[0][2] + rhs.m[0][2]],
+                [self.m[1][0] + rhs.m[1][0], self.m[1][1] + rhs.m[1][1], self.m[1][2] + rhs.m[1][2]],
+                [self.m[2][0] + rhs.m[2][0], self.m[2][1] + rhs.m[2][1], self.m[2][2] + rhs.m[2][2]],
+            ],
         }
-        Self { m }
     }
 }
 
@@ -303,12 +303,12 @@ impl Sub for Matrix3x3 {
     type Output = Self;
     #[inline]
     fn sub(self, rhs: Self) -> Self {
-        let mut m = [[0.0; 3]; 3];
-        for i in 0..3 {
-            for j in 0..3 {
-                m[i][j] = self.m[i][j] - rhs.m[i][j];
-            }
+        Self {
+            m: [
+                [self.m[0][0] - rhs.m[0][0], self.m[0][1] - rhs.m[0][1], self.m[0][2] - rhs.m[0][2]],
+                [self.m[1][0] - rhs.m[1][0], self.m[1][1] - rhs.m[1][1], self.m[1][2] - rhs.m[1][2]],
+                [self.m[2][0] - rhs.m[2][0], self.m[2][1] - rhs.m[2][1], self.m[2][2] - rhs.m[2][2]],
+            ],
         }
-        Self { m }
     }
 }

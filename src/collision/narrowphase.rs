@@ -384,24 +384,18 @@ pub fn collide_box_box(
 
     // Test 15 potential separating axes: 3 face normals of A, 3 face normals of B, 9 edge cross products
     for axis in &axes_a {
-        if let Some(pen) = test_sat_axis(*axis, box_a, t_a, box_b, t_b, translation) {
-            if pen < min_penetration {
-                min_penetration = pen;
-                best_axis = *axis;
-            }
-        } else {
-            return None;
+        let pen = test_sat_axis(*axis, box_a, t_a, box_b, t_b, translation)?;
+        if pen < min_penetration {
+            min_penetration = pen;
+            best_axis = *axis;
         }
     }
 
     for axis in &axes_b {
-        if let Some(pen) = test_sat_axis(*axis, box_a, t_a, box_b, t_b, translation) {
-            if pen < min_penetration {
-                min_penetration = pen;
-                best_axis = *axis;
-            }
-        } else {
-            return None;
+        let pen = test_sat_axis(*axis, box_a, t_a, box_b, t_b, translation)?;
+        if pen < min_penetration {
+            min_penetration = pen;
+            best_axis = *axis;
         }
     }
 
@@ -410,13 +404,10 @@ pub fn collide_box_box(
             let cross = a.cross(*b);
             if cross.length_squared() > 1e-6 {
                 let norm_cross = cross.normalize();
-                if let Some(pen) = test_sat_axis(norm_cross, box_a, t_a, box_b, t_b, translation) {
-                    if pen < min_penetration {
-                        min_penetration = pen;
-                        best_axis = norm_cross;
-                    }
-                } else {
-                    return None;
+                let pen = test_sat_axis(norm_cross, box_a, t_a, box_b, t_b, translation)?;
+                if pen < min_penetration {
+                    min_penetration = pen;
+                    best_axis = norm_cross;
                 }
             }
         }

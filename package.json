@@ -1,0 +1,38 @@
+{
+  "name": "bullet3-rs",
+  "version": "0.1.0",
+  "description": "High-performance pure Rust port and fork of the Bullet 3 Physics SDK for real-time 3D rigid body dynamics, collision detection, and multi-body constraints",
+  "main": "bin/bullet3.js",
+  "bin": {
+    "bullet3": "bin/bullet3.js",
+    "bullet3-rs": "bin/bullet3.js"
+  },
+  "files": [
+    "bin/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "prepublishOnly": "cargo build --release --bin bullet3 && strip -x target/release/bullet3 && cp target/release/bullet3 bin/bullet3-bin",
+    "test": "node bin/bullet3.js --help"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bhubbard/bullet3-rs.git"
+  },
+  "keywords": [
+    "physics",
+    "bullet3",
+    "collision-detection",
+    "rigid-body",
+    "simulation",
+    "game-dev",
+    "cli"
+  ],
+  "author": "Brandon Hubbard",
+  "license": "Zlib OR MIT OR Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/bhubbard/bullet3-rs/issues"
+  },
+  "homepage": "https://github.com/bhubbard/bullet3-rs#readme"
+}

@@ -1,7 +1,8 @@
 [package]
 name = "bullet3-rs"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
+rust-version = "1.85"
 authors = ["Brandon Hubbard"]
 description = "A high-performance pure Rust port and fork of the Bullet 3 Physics SDK for real-time 3D rigid body dynamics, collision detection, and multi-body constraints"
 license = "Zlib OR MIT OR Apache-2.0"
