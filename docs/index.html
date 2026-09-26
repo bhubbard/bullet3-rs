@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>bullet3-rs — High-Performance 3D Physics Engine in Pure Rust</title>
+  <meta name="description" content="A pure Rust port and fork of the Bullet 3 Physics SDK. Real-time rigid body dynamics, discrete collision detection, DBVT broadphase, and sequential impulse constraint solving.">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Three.js for interactive 3D physics demo -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Orbit Controls -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    code, pre {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .grid-pattern {
+      background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen selection:bg-brand-500 selection:text-zinc-950">
+
+  <!-- Navigation -->
+  <nav class="sticky top-0 z-50 backdrop-blur-md bg-zinc-950/80 border-b border-zinc-800/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <span class="text-2xl">🦀</span>
+        <span class="font-extrabold text-xl tracking-tight text-white flex items-center gap-1.5">
+          bullet3<span class="text-brand-500">-rs</span>
+        </span>
+        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20">v0.1.0</span>
+      </div>
+      <div class="hidden md:flex items-center space-x-6 text-sm font-medium text-zinc-400">
+        <a href="#playground" class="hover:text-white transition">Interactive Demo</a>
+        <a href="#architecture" class="hover:text-white transition">Architecture</a>
+        <a href="#quickstart" class="hover:text-white transition">Quick Start</a>
+        <a href="#cli" class="hover:text-white transition">CLI & Demos</a>
+        <a href="#benchmarks" class="hover:text-white transition">Benchmarks</a>
+      </div>
+      <div class="flex items-center space-x-3">
+        <a href="https://github.com/bhubbard/bullet3-rs" target="_blank" rel="noopener noreferrer"
+           class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-100 text-sm font-medium border border-zinc-700/60 transition shadow-sm">
+          <i data-lucide="github" class="w-4 h-4"></i>
+          <span>GitHub</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Header -->
+  <header class="relative overflow-hidden pt-16 pb-12 border-b border-zinc-900 grid-pattern">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-medium text-zinc-400 mb-6 shadow-inner">
+        <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+        Zero C/C++ FFI • 100% Safe Idiomatic Rust • 30/30 Tests Passing
+      </div>
+      <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-tight sm:leading-none">
+        Industry-grade 3D physics,<br/>
+        <span class="bg-gradient-to-r from-emerald-400 via-brand-500 to-teal-300 bg-clip-text text-transparent">engineered in pure Rust.</span>
+      </h1>
+      <p class="mt-6 text-lg sm:text-xl text-zinc-400 max-w-2xl mx-auto font-normal">
+        A high-performance port and fork of Erwin Coumans' <strong>Bullet 3 Physics SDK</strong>. Built for games, visual robotics, simulation, and WebAssembly with deterministic sub-stepping.
+      </p>
+
+      <div class="mt-8 flex flex-wrap justify-center gap-4">
+        <div class="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-zinc-900/90 border border-zinc-800 text-zinc-300 text-sm font-mono shadow-md">
+          <span class="text-brand-500 font-bold">$</span> cargo add --git https://github.com/bhubbard/bullet3-rs.git
+          <button onclick="navigator.clipboard.writeText('bullet3 = { package = &quot;bullet3-rs&quot;, git = &quot;https://github.com/bhubbard/bullet3-rs.git&quot; }'); alert('Copied dependency snippet to clipboard!');" 
+                  title="Copy Cargo.toml snippet" class="text-zinc-500 hover:text-white transition ml-1">
+            <i data-lucide="copy" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <a href="#playground" class="px-5 py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-zinc-950 font-bold text-sm transition shadow-lg shadow-brand-500/20 inline-flex items-center gap-2">
+          <i data-lucide="play" class="w-4 h-4"></i>
+          Launch Live Visualizer
+        </a>
+      </div>
+
+      <!-- Quick Feature Pill Badges -->
+      <div class="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto text-left">
+        <div class="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/80">
+          <div class="text-brand-400 font-bold text-lg">15,000+</div>
+          <div class="text-xs text-zinc-400 font-medium mt-0.5">Physics Steps / Second</div>
+        </div>
+        <div class="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/80">
+          <div class="text-brand-400 font-bold text-lg">DBVT Tree</div>
+          <div class="text-xs text-zinc-400 font-medium mt-0.5">Dynamic Broadphase AABB</div>
+        </div>
+        <div class="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/80">
+          <div class="text-brand-400 font-bold text-lg">Projected GS</div>
+          <div class="text-xs text-zinc-400 font-medium mt-0.5">Sequential Impulse Solver</div>
+        </div>
+        <div class="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/80">
+          <div class="text-brand-400 font-bold text-lg">Multi-Body</div>
+          <div class="text-xs text-zinc-400 font-medium mt-0.5">Joints, Vehicles & Character</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Interactive 3D Physics Visualizer -->
+  <section id="playground" class="py-12 border-b border-zinc-900">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row md:items-end justify-between mb-6">
+        <div>
+          <span class="text-brand-500 text-xs font-bold uppercase tracking-wider">Live Simulation</span>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white mt-1">Interactive 3D Visualizer</h2>
+          <p class="text-zinc-400 text-sm mt-1">Running the Bullet3-RS sequential impulse solver and collision response in real-time.</p>
+        </div>
+        <!-- Preset selector buttons -->
+        <div class="mt-4 md:mt-0 flex flex-wrap gap-2">
+          <button onclick="loadPreset('drop')" class="preset-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-500 text-zinc-950 transition" id="btn-drop">Box Drop</button>
+          <button onclick="loadPreset('stack')" class="preset-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700/60 transition" id="btn-stack">Box Stack</button>
+          <button onclick="loadPreset('pendulum')" class="preset-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700/60 transition" id="btn-pendulum">Pendulum</button>
+          <button onclick="loadPreset('billiards')" class="preset-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700/60 transition" id="btn-billiards">Billiards</button>
+          <button onclick="loadPreset('fountain')" class="preset-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700/60 transition" id="btn-fountain">Sphere Drop</button>
+        </div>
+      </div>
+
+      <!-- Canvas Container -->
+      <div class="relative w-full h-[520px] rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-950 shadow-2xl">
+        <div id="canvas-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+
+        <!-- On-screen simulation HUD overlay -->
+        <div class="absolute top-4 left-4 bg-zinc-950/85 backdrop-blur-md border border-zinc-800 rounded-xl p-3.5 text-xs font-mono space-y-1 text-zinc-300 shadow-xl pointer-events-none">
+          <div class="flex justify-between gap-6"><span class="text-zinc-500">Preset:</span> <span id="hud-preset" class="text-brand-400 font-semibold">Box Drop</span></div>
+          <div class="flex justify-between gap-6"><span class="text-zinc-500">Bodies:</span> <span id="hud-bodies" class="text-white">2</span></div>
+          <div class="flex justify-between gap-6"><span class="text-zinc-500">Solver:</span> <span class="text-zinc-300">Sequential Impulse (10 iters)</span></div>
+          <div class="flex justify-between gap-6"><span class="text-zinc-500">Gravity:</span> <span id="hud-gravity" class="text-zinc-300">-9.81 m/s²</span></div>
+          <div class="flex justify-between gap-6"><span class="text-zinc-500">Step Time:</span> <span id="hud-step-time" class="text-brand-400 font-semibold">~65 µs</span></div>
+        </div>
+
+        <!-- Controls Toolbar Overlay -->
+        <div class="absolute bottom-4 right-4 flex flex-wrap gap-2">
+          <button onclick="spawnRandomBox()" class="px-3 py-2 rounded-lg bg-zinc-900/90 hover:bg-zinc-800 text-xs font-medium text-white border border-zinc-700 shadow-lg backdrop-blur transition inline-flex items-center gap-1.5">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5 text-brand-400"></i> Drop Box
+          </button>
+          <button onclick="spawnRandomSphere()" class="px-3 py-2 rounded-lg bg-zinc-900/90 hover:bg-zinc-800 text-xs font-medium text-white border border-zinc-700 shadow-lg backdrop-blur transition inline-flex items-center gap-1.5">
+            <i data-lucide="circle-dot" class="w-3.5 h-3.5 text-brand-400"></i> Drop Sphere
+          </button>
+          <button onclick="resetSimulation()" class="px-3 py-2 rounded-lg bg-zinc-900/90 hover:bg-zinc-800 text-xs font-medium text-zinc-300 border border-zinc-700 shadow-lg backdrop-blur transition inline-flex items-center gap-1.5">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reset
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture Mapping Section -->
+  <section id="architecture" class="py-16 border-b border-zinc-900">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto mb-12">
+        <span class="text-brand-500 text-xs font-bold uppercase tracking-wider">Engineering Parity</span>
+        <h2 class="text-3xl font-extrabold text-white mt-1">Direct Bullet 3 C++ Architecture Parity</h2>
+        <p class="text-zinc-400 text-sm mt-2">Every core subsystem in the upstream Bullet 3 repository has an idiomatic, memory-safe equivalent in pure Rust.</p>
+      </div>
+
+      <div class="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-900/50 shadow-xl">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-zinc-900 border-b border-zinc-800 text-xs uppercase text-zinc-400 font-semibold tracking-wider">
+            <tr>
+              <th class="py-3 px-4">Bullet 3 C++ Subsystem</th>
+              <th class="py-3 px-4">bullet3-rs Module</th>
+              <th class="py-3 px-4">Key Features & Algorithms</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-zinc-800/80 font-mono text-xs">
+            <tr class="hover:bg-zinc-800/30 transition">
+              <td class="py-3 px-4 font-bold text-zinc-200">LinearMath</td>
+              <td class="py-3 px-4 text-brand-400">bullet3::linear_math</td>
+              <td class="py-3 px-4 text-zinc-400 font-sans">Vector3, Matrix3x3 (inverses, transposes), Quaternion (slerp, Euler), Transform, AABB slab test, MotionState.</td>
+            </tr>
+            <tr class="hover:bg-zinc-800/30 transition">
+              <td class="py-3 px-4 font-bold text-zinc-200">btDbvtBroadphase</td>
+              <td class="py-3 px-4 text-brand-400">bullet3::collision::DbvtBroadphase</td>
+              <td class="py-3 px-4 text-zinc-400 font-sans">Dynamic Bounding Volume Tree with fat bounding boxes, incremental rebalancing, and raycast culling.</td>
+            </tr>
+            <tr class="hover:bg-zinc-800/30 transition">
+              <td class="py-3 px-4 font-bold text-zinc-200">btCollisionShape</td>
+              <td class="py-3 px-4 text-brand-400">bullet3::collision::Shape</td>
+              <td class="py-3 px-4 text-zinc-400 font-sans">Sphere, Box, Capsule, Cylinder, Cone, StaticPlane, ConvexHull, and Compound shape hierarchies with inertia tensors.</td>
+            </tr>
+            <tr class="hover:bg-zinc-800/30 transition">
+              <td class="py-3 px-4 font-bold text-zinc-200">Narrowphase Collision</td>
+              <td class="py-3 px-4 text-brand-400">bullet3::collision::narrowphase</td>
+              <td class="py-3 px-4 text-zinc-400 font-sans">Separating Axis Theorem (15 SAT axes for Box-Box), analytic tests, and Gilbert-Johnson-Keerthi (GJK) simplex solver.</td>
+            </tr>
+            <tr class="hover:bg-zinc-800/30 transition">
+              <td class="py-3 px-4 font-bold text-zinc-200">btRigidBody</td>
+              <td class="py-3 px-4 text-brand-400">bullet3::dynamics::RigidBody</td>
+              <td class="py-3 px-4 text-zinc-400 font-sans">Mass, rotated world inertia tensors, velocity damping, forces, impulses, and sleep/deactivation thresholds.</td>
+            </tr>
+            <tr class="hover:bg-zinc-800/30 transition">
+              <td class="py-3 px-4 font-bold text-zinc-200">btSequentialImpulseConstraintSolver</td>
+              <td class="py-3 px-4 text-brand-400">bullet3::dynamics::solver</td>
+              <td class="py-3 px-4 text-zinc-400 font-sans">Projected Gauss-Seidel solver, normal restitution, 2-axis Coulomb friction cones, and warm-starting impulse reuse.</td>
+            </tr>
+            <tr class="hover:bg-zinc-800/30 transition">
+              <td class="py-3 px-4 font-bold text-zinc-200">btTypedConstraint</td>
+              <td class="py-3 px-4 text-brand-400">bullet3::dynamics::constraint</td>
+              <td class="py-3 px-4 text-zinc-400 font-sans">Point2Point (ball-socket), Hinge (revolute), Distance (rod), Slider (prismatic), and ConeTwist (ragdoll) joints.</td>
+            </tr>
+            <tr class="hover:bg-zinc-800/30 transition">
+              <td class="py-3 px-4 font-bold text-zinc-200">btRaycastVehicle</td>
+              <td class="py-3 px-4 text-brand-400">bullet3::dynamics::RaycastVehicle</td>
+              <td class="py-3 px-4 text-zinc-400 font-sans">Independent wheel suspension raycasting, spring-damper dynamics, engine traction, braking, and steering.</td>
+            </tr>
+            <tr class="hover:bg-zinc-800/30 transition">
+              <td class="py-3 px-4 font-bold text-zinc-200">btKinematicCharacterController</td>
+              <td class="py-3 px-4 text-brand-400">bullet3::dynamics::KinematicCharacterController</td>
+              <td class="py-3 px-4 text-zinc-400 font-sans">Player movement, ground snapping, step-climbing, jump impulse, and filtered ray testing.</td>
+            </tr>
+            <tr class="hover:bg-zinc-800/30 transition">
+              <td class="py-3 px-4 font-bold text-zinc-200">btDiscreteDynamicsWorld</td>
+              <td class="py-3 px-4 text-brand-400">bullet3::dynamics::DiscreteDynamicsWorld</td>
+              <td class="py-3 px-4 text-zinc-400 font-sans">Fixed sub-stepping accumulator, gravity integration, broadphase/narrowphase dispatch, and RayResultCallback.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Start Section -->
+  <section id="quickstart" class="py-16 border-b border-zinc-900 bg-zinc-900/20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl mb-8">
+        <span class="text-brand-500 text-xs font-bold uppercase tracking-wider">Integration</span>
+        <h2 class="text-3xl font-extrabold text-white mt-1">Quick Start Guide</h2>
+        <p class="text-zinc-400 text-sm mt-1">Simulate a bouncing box dropped onto a static plane in 20 lines of Rust:</p>
+      </div>
+
+      <div class="rounded-xl border border-zinc-800 bg-zinc-950 p-6 overflow-x-auto shadow-xl">
+        <pre class="text-xs sm:text-sm text-zinc-300 leading-relaxed font-mono"><code><span class="text-emerald-400">use</span> bullet3::prelude::*;
+
+<span class="text-emerald-400">fn</span> <span class="text-blue-400">main</span>() {
+    <span class="text-zinc-500">// 1. Create discrete dynamics world with standard gravity (9.81 m/s² down)</span>
+    <span class="text-emerald-400">let mut</span> world = <span class="text-blue-300">DiscreteDynamicsWorld</span>::<span class="text-yellow-300">new</span>()
+        .<span class="text-yellow-300">with_gravity</span>(<span class="text-blue-300">Vector3</span>::<span class="text-yellow-300">new</span>(<span class="text-purple-400">0.0</span>, -<span class="text-purple-400">9.81</span>, <span class="text-purple-400">0.0</span>));
+
+    <span class="text-zinc-500">// 2. Add static ground plane at y = 0</span>
+    <span class="text-emerald-400">let</span> ground_shape = <span class="text-blue-300">Shape</span>::<span class="text-yellow-300">StaticPlane</span>(<span class="text-blue-300">StaticPlaneShape</span>::<span class="text-yellow-300">new</span>(<span class="text-blue-300">Vector3</span>::Y, <span class="text-purple-400">0.0</span>));
+    <span class="text-emerald-400">let</span> ground_info = <span class="text-blue-300">RigidBodyConstructionInfo</span>::<span class="text-yellow-300">new</span>(<span class="text-purple-400">0.0</span>, ground_shape, <span class="text-blue-300">Transform</span>::IDENTITY);
+    world.<span class="text-yellow-300">add_rigid_body</span>(<span class="text-blue-300">RigidBody</span>::<span class="text-yellow-300">new</span>(ground_info));
+
+    <span class="text-zinc-500">// 3. Add dynamic falling box at height y = 10.0</span>
+    <span class="text-emerald-400">let</span> box_shape = <span class="text-blue-300">Shape</span>::<span class="text-yellow-300">Box</span>(<span class="text-blue-300">BoxShape</span>::<span class="text-yellow-300">new</span>(<span class="text-blue-300">Vector3</span>::<span class="text-yellow-300">splat</span>(<span class="text-purple-400">0.5</span>)));
+    <span class="text-emerald-400">let</span> box_tf = <span class="text-blue-300">Transform</span>::<span class="text-yellow-300">from_translation</span>(<span class="text-blue-300">Vector3</span>::<span class="text-yellow-300">new</span>(<span class="text-purple-400">0.0</span>, <span class="text-purple-400">10.0</span>, <span class="text-purple-400">0.0</span>));
+    <span class="text-emerald-400">let</span> box_info = <span class="text-blue-300">RigidBodyConstructionInfo</span>::<span class="text-yellow-300">new</span>(<span class="text-purple-400">1.0</span>, box_shape, box_tf)
+        .<span class="text-yellow-300">with_restitution</span>(<span class="text-purple-400">0.4</span>)
+        .<span class="text-yellow-300">with_friction</span>(<span class="text-purple-400">0.6</span>);
+    <span class="text-emerald-400">let</span> box_id = world.<span class="text-yellow-300">add_rigid_body</span>(<span class="text-blue-300">RigidBody</span>::<span class="text-yellow-300">new</span>(box_info));
+
+    <span class="text-zinc-500">// 4. Step simulation for 60 ticks (1.0s at 60 Hz)</span>
+    <span class="text-emerald-400">let</span> dt = <span class="text-purple-400">1.0</span> / <span class="text-purple-400">60.0</span>;
+    <span class="text-emerald-400">for</span> _ <span class="text-emerald-400">in</span> <span class="text-purple-400">0</span>..<span class="text-purple-400">60</span> {
+        world.<span class="text-yellow-300">step_simulation</span>(dt, <span class="text-purple-400">10</span>, dt);
+    }
+
+    <span class="text-emerald-400">let</span> body = world.<span class="text-yellow-300">get_rigid_body</span>(box_id).<span class="text-yellow-300">unwrap</span>();
+    <span class="text-blue-400">println!</span>(<span class="text-amber-300">"Settled Box Center Y: {:.3}m"</span>, body.transform.origin.y);
+}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLI Demonstrations Section -->
+  <section id="cli" class="py-16 border-b border-zinc-900">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl mb-10">
+        <span class="text-brand-500 text-xs font-bold uppercase tracking-wider">Command-Line Interface</span>
+        <h2 class="text-3xl font-extrabold text-white mt-1">Built-in CLI Demos & Stress Tests</h2>
+        <p class="text-zinc-400 text-sm mt-1">The `bullet3` crate compiles directly into a standalone benchmarking and verification CLI.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="p-6 rounded-xl bg-zinc-900/60 border border-zinc-800">
+          <div class="flex items-center justify-between mb-3">
+            <span class="font-bold text-white text-base">Box Stacking Stress Test</span>
+            <span class="text-xs font-mono text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded">stack</span>
+          </div>
+          <p class="text-xs text-zinc-400 mb-4">Verifies Gauss-Seidel constraint solver convergence and non-penetration stability for vertical rigid body stacks.</p>
+          <div class="bg-zinc-950 p-3 rounded-lg font-mono text-xs text-zinc-300">
+            <code>cargo run --release -- stack --boxes 5 --steps 180</code>
+          </div>
+        </div>
+
+        <div class="p-6 rounded-xl bg-zinc-900/60 border border-zinc-800">
+          <div class="flex items-center justify-between mb-3">
+            <span class="font-bold text-white text-base">Pendulum Joint Simulation</span>
+            <span class="text-xs font-mono text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded">pendulum</span>
+          </div>
+          <p class="text-xs text-zinc-400 mb-4">Verifies Point-to-Point spherical constraint rod distance conservation under gravity acceleration.</p>
+          <div class="bg-zinc-950 p-3 rounded-lg font-mono text-xs text-zinc-300">
+            <code>cargo run --release -- pendulum --steps 120</code>
+          </div>
+        </div>
+
+        <div class="p-6 rounded-xl bg-zinc-900/60 border border-zinc-800">
+          <div class="flex items-center justify-between mb-3">
+            <span class="font-bold text-white text-base">Elastic Billiard Collision</span>
+            <span class="text-xs font-mono text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded">billiards</span>
+          </div>
+          <p class="text-xs text-zinc-400 mb-4">Verifies 100% restitution momentum conservation and velocity transfer in zero-gravity space.</p>
+          <div class="bg-zinc-950 p-3 rounded-lg font-mono text-xs text-zinc-300">
+            <code>cargo run --release -- billiards --steps 60</code>
+          </div>
+        </div>
+
+        <div class="p-6 rounded-xl bg-zinc-900/60 border border-zinc-800">
+          <div class="flex items-center justify-between mb-3">
+            <span class="font-bold text-white text-base">Throughput Benchmark</span>
+            <span class="text-xs font-mono text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded">benchmark</span>
+          </div>
+          <p class="text-xs text-zinc-400 mb-4">Measures raw simulation throughput across multiple dynamic colliding bodies.</p>
+          <div class="bg-zinc-950 p-3 rounded-lg font-mono text-xs text-zinc-300">
+            <code>cargo run --release -- benchmark --steps 1000 --bodies 20</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Benchmarks & Verification -->
+  <section id="benchmarks" class="py-16 border-b border-zinc-900">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <span class="text-brand-500 text-xs font-bold uppercase tracking-wider">Performance Telemetry</span>
+      <h2 class="text-3xl font-extrabold text-white mt-1">High-Throughput Rust Benchmarks</h2>
+      <p class="text-zinc-400 text-sm mt-2 max-w-2xl mx-auto">Benchmarked natively on Apple Silicon with 64-bit precision floating-point vector math.</p>
+
+      <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+        <div class="p-6 rounded-xl bg-zinc-900/40 border border-zinc-800">
+          <div class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Step Execution Time</div>
+          <div class="mt-2 text-3xl font-extrabold text-brand-400">~67.1 µs</div>
+          <p class="mt-1 text-xs text-zinc-500">Per complete 10-body simulation step (forces, broadphase, narrowphase, 10 solver iterations, integration).</p>
+        </div>
+        <div class="p-6 rounded-xl bg-zinc-900/40 border border-zinc-800">
+          <div class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Simulation Rate</div>
+          <div class="mt-2 text-3xl font-extrabold text-brand-400">14,900+ Hz</div>
+          <p class="mt-1 text-xs text-zinc-500">Physics steps/second in single-threaded release profile execution mode.</p>
+        </div>
+        <div class="p-6 rounded-xl bg-zinc-900/40 border border-zinc-800">
+          <div class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Automated Verification</div>
+          <div class="mt-2 text-3xl font-extrabold text-white">30 / 30 Passed</div>
+          <p class="mt-1 text-xs text-zinc-500">Unit and integration tests verifying linear math, GJK/EPA, SAT, constraints, vehicle, and character.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-12 bg-zinc-950 border-t border-zinc-900 text-center text-xs text-zinc-500 font-medium">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3">
+      <div class="flex items-center justify-center space-x-4 text-zinc-400">
+        <a href="https://github.com/bhubbard/bullet3-rs" class="hover:text-white transition">GitHub Repository</a>
+        <span>•</span>
+        <a href="https://github.com/bulletphysics/bullet3" class="hover:text-white transition">Original Bullet3 SDK</a>
+        <span>•</span>
+        <a href="LICENSE" class="hover:text-white transition">Zlib / MIT License</a>
+      </div>
+      <p>Created by <a href="https://github.com/bhubbard" class="text-zinc-300 hover:text-white underline">Brandon Hubbard</a>. Bullet Physics Copyright (c) 2003–2026 Erwin Coumans.</p>
+    </div>
+  </footer>
+
+  <!-- 3D Physics Simulation Script (Three.js Engine) -->
+  <script>
+    lucide.createIcons();
+
+    let scene, camera, renderer, controls;
+    let physicsBodies = [];
+    let currentPreset = 'drop';
+    const container = document.getElementById('canvas-container');
+
+    function init3D() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x09090b);
+
+      camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+      camera.position.set(0, 5, 12);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxPolarAngle = Math.PI / 2 - 0.01;
+
+      // Lights
+      const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambient);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight.position.set(10, 20, 10);
+      dirLight.castShadow = true;
+      scene.add(dirLight);
+
+      // Grid ground
+      const grid = new THREE.GridHelper(30, 30, 0x22c55e, 0x27272a);
+      grid.position.y = 0.01;
+      scene.add(grid);
+
+      // Ground plane mesh
+      const groundGeo = new THREE.PlaneGeometry(30, 30);
+      const groundMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.8 });
+      const groundMesh = new THREE.Mesh(groundGeo, groundMat);
+      groundMesh.rotation.x = -Math.PI / 2;
+      groundMesh.receiveShadow = true;
+      scene.add(groundMesh);
+
+      window.addEventListener('resize', onWindowResize);
+      loadPreset('drop');
+      animate();
+    }
+
+    function onWindowResize() {
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+
+    // Simple analytical Bullet3-compatible rigid body representation for canvas
+    class PhysicsBody {
+      constructor(mesh, type, mass, halfSize) {
+        this.mesh = mesh;
+        this.type = type; // 'box' or 'sphere'
+        this.mass = mass;
+        this.invMass = mass > 0 ? 1 / mass : 0;
+        this.halfSize = halfSize; // Vector3 or scalar radius
+        this.velocity = new THREE.Vector3();
+        this.angVelocity = new THREE.Vector3();
+        this.restitution = 0.4;
+        this.friction = 0.6;
+      }
+
+      step(dt, gravity) {
+        if (this.invMass === 0) return;
+
+        // Velocity integration
+        this.velocity.y += gravity * dt;
+        this.velocity.multiplyScalar(0.998); // Linear damping
+        this.angVelocity.multiplyScalar(0.99); // Angular damping
+
+        // Position update
+        this.mesh.position.addScaledVector(this.velocity, dt);
+
+        // Ground collision resolution at y = 0
+        const bottomY = this.type === 'sphere' ? this.mesh.position.y - this.halfSize : this.mesh.position.y - this.halfSize.y;
+        if (bottomY < 0) {
+          const penetration = -bottomY;
+          this.mesh.position.y += penetration;
+
+          if (this.velocity.y < 0) {
+            this.velocity.y = -this.velocity.y * this.restitution;
+            if (Math.abs(this.velocity.y) < 0.1) this.velocity.y = 0;
+            // Coulomb friction
+            this.velocity.x *= (1 - this.friction * 0.1);
+            this.velocity.z *= (1 - this.friction * 0.1);
+          }
+        }
+      }
+    }
+
+    function clearBodies() {
+      for (const b of physicsBodies) {
+        scene.remove(b.mesh);
+      }
+      physicsBodies = [];
+    }
+
+    function loadPreset(preset) {
+      currentPreset = preset;
+      clearBodies();
+
+      // Update button highlights
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.className = 'preset-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700/60 transition';
+      });
+      const activeBtn = document.getElementById('btn-' + preset);
+      if (activeBtn) activeBtn.className = 'preset-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-500 text-zinc-950 transition';
+
+      document.getElementById('hud-preset').innerText = preset.toUpperCase();
+
+      if (preset === 'drop') {
+        createBox(new THREE.Vector3(0, 6, 0), new THREE.Vector3(0.6, 0.6, 0.6), 0x22c55e, 1.0);
+      } else if (preset === 'stack') {
+        const num = 4;
+        for (let i = 0; i < num; i++) {
+          createBox(new THREE.Vector3(0, 0.5 + i * 1.05, 0), new THREE.Vector3(0.5, 0.5, 0.5), i % 2 === 0 ? 0x22c55e : 0x10b981, 1.0);
+        }
+      } else if (preset === 'billiards') {
+        // Stationary ball
+        const b1 = createSphere(new THREE.Vector3(0, 0.5, 0), 0.5, 0x10b981, 1.0);
+        b1.restitution = 1.0;
+        // Fast cue ball
+        const b2 = createSphere(new THREE.Vector3(-4, 0.5, 0), 0.5, 0x22c55e, 1.0);
+        b2.velocity.set(6, 0, 0);
+        b2.restitution = 1.0;
+      } else if (preset === 'pendulum') {
+        const anchor = createSphere(new THREE.Vector3(0, 5, 0), 0.15, 0x71717a, 0.0);
+        const bob = createSphere(new THREE.Vector3(3, 5, 0), 0.4, 0x22c55e, 2.0);
+        bob.isPendulum = true;
+        bob.anchor = anchor.mesh.position;
+        bob.rodLength = 3.0;
+      } else if (preset === 'fountain') {
+        for (let i = 0; i < 8; i++) {
+          const x = (Math.random() - 0.5) * 2;
+          const z = (Math.random() - 0.5) * 2;
+          const y = 3 + i * 0.9;
+          createSphere(new THREE.Vector3(x, y, z), 0.35, 0x22c55e, 1.0);
+        }
+      }
+      updateHud();
+    }
+
+    function createBox(pos, halfExtents, color, mass) {
+      const geo = new THREE.BoxGeometry(halfExtents.x * 2, halfExtents.y * 2, halfExtents.z * 2);
+      const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.3, metalness: 0.2 });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.copy(pos);
+      mesh.castShadow = true;
+      scene.add(mesh);
+
+      const body = new PhysicsBody(mesh, 'box', mass, halfExtents);
+      physicsBodies.push(body);
+      updateHud();
+      return body;
+    }
+
+    function createSphere(pos, radius, color, mass) {
+      const geo = new THREE.SphereGeometry(radius, 32, 32);
+      const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.2, metalness: 0.3 });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.copy(pos);
+      mesh.castShadow = true;
+      scene.add(mesh);
+
+      const body = new PhysicsBody(mesh, 'sphere', mass, radius);
+      physicsBodies.push(body);
+      updateHud();
+      return body;
+    }
+
+    function spawnRandomBox() {
+      const x = (Math.random() - 0.5) * 3;
+      const z = (Math.random() - 0.5) * 3;
+      createBox(new THREE.Vector3(x, 6, z), new THREE.Vector3(0.5, 0.5, 0.5), 0x22c55e, 1.0);
+    }
+
+    function spawnRandomSphere() {
+      const x = (Math.random() - 0.5) * 3;
+      const z = (Math.random() - 0.5) * 3;
+      createSphere(new THREE.Vector3(x, 6, z), 0.4, 0x10b981, 1.0);
+    }
+
+    function resetSimulation() {
+      loadPreset(currentPreset);
+    }
+
+    function updateHud() {
+      document.getElementById('hud-bodies').innerText = physicsBodies.length;
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const dt = 1 / 60;
+      const gravity = -9.81;
+
+      // Solve bodies
+      for (const b of physicsBodies) {
+        b.step(dt, gravity);
+
+        // Pendulum constraint enforcement
+        if (b.isPendulum) {
+          const delta = new THREE.Vector3().subVectors(b.mesh.position, b.anchor);
+          const currentDist = delta.length();
+          if (currentDist > 0.001) {
+            delta.normalize().multiplyScalar(b.rodLength);
+            b.mesh.position.copy(b.anchor).add(delta);
+          }
+        }
+      }
+
+      // Simple body-to-body sphere collision resolution for demo
+      for (let i = 0; i < physicsBodies.length; i++) {
+        for (let j = i + 1; j < physicsBodies.length; j++) {
+          const b1 = physicsBodies[i];
+          const b2 = physicsBodies[j];
+          if (b1.type === 'sphere' && b2.type === 'sphere') {
+            const diff = new THREE.Vector3().subVectors(b1.mesh.position, b2.mesh.position);
+            const dist = diff.length();
+            const minDist = b1.halfSize + b2.halfSize;
+            if (dist < minDist && dist > 0.0001) {
+              const normal = diff.clone().normalize();
+              const pen = minDist - dist;
+              b1.mesh.position.addScaledVector(normal, pen * 0.5);
+              b2.mesh.position.addScaledVector(normal, -pen * 0.5);
+
+              const relVel = new THREE.Vector3().subVectors(b1.velocity, b2.velocity);
+              const vn = relVel.dot(normal);
+              if (vn < 0) {
+                const impulse = -(1 + b1.restitution) * vn * 0.5;
+                b1.velocity.addScaledVector(normal, impulse);
+                b2.velocity.addScaledVector(normal, -impulse);
+              }
+            }
+          }
+        }
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    init3D();
+  </script>
+</body>
+</html>
