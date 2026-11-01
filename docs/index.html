@@ -665,6 +665,133 @@
     }
 
   </style>
+
+  <style id="bh-minimalist-hero-css">
+    /* Minimalist Design System & Hero Standardization */
+    .glow, .glow-1, .glow-2, .glow-bg, .ambient-glow {
+      display: none !important;
+    }
+    body {
+      height: auto !important;
+      min-height: 100vh !important;
+      overflow-y: auto !important;
+    }
+    .main-grid, .main-layout {
+      min-height: 680px !important;
+    }
+    header.bh-minimal-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 2rem;
+      border-bottom: 1px solid var(--color-border, var(--border, #262626));
+      background: var(--color-bg-primary, var(--bg, #0a0a0a));
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.78rem;
+    }
+    header.bh-minimal-topbar a {
+      color: var(--color-text-secondary, #a1a1aa);
+      text-decoration: none;
+    }
+    header.bh-minimal-topbar a:hover {
+      color: var(--color-text-primary, #fafafa);
+    }
+    section.hero.bh-minimal-hero {
+      display: block !important;
+      grid-template-columns: 1fr !important;
+      padding: 2.75rem 2rem 2.25rem !important;
+      border-bottom: 1px solid var(--color-border, var(--border, var(--border-grid, #262626))) !important;
+      background: transparent !important;
+      text-align: left !important;
+      max-width: 1280px;
+      margin: 0 auto;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .bh-minimal-hero .bh-hero-inner {
+      max-width: 820px;
+      margin: 0;
+    }
+    .bh-minimal-hero .bh-hero-eyebrow {
+      display: inline-block;
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-accent-cyan, var(--accent, #06b6d4));
+      margin-bottom: 0.75rem;
+    }
+    .bh-minimal-hero h1 {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      font-size: clamp(1.65rem, 3vw, 2.35rem) !important;
+      font-weight: 700 !important;
+      letter-spacing: -0.025em !important;
+      line-height: 1.2 !important;
+      color: var(--color-text-primary, var(--text, var(--text-primary, #fafafa))) !important;
+      margin: 0 0 0.85rem 0 !important;
+      background: none !important;
+      -webkit-text-fill-color: currentColor !important;
+    }
+    .bh-minimal-hero p.hero-lead {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      font-size: 1.04rem !important;
+      font-weight: 400 !important;
+      line-height: 1.65 !important;
+      color: var(--color-text-secondary, var(--muted, var(--text-secondary, #a1a1aa))) !important;
+      margin: 0 0 1.35rem 0 !important;
+      max-width: 72ch !important;
+    }
+    .bh-minimal-hero .bh-hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .bh-minimal-hero .bh-cli-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.45rem 0.65rem 0.45rem 0.85rem;
+      background: var(--color-bg-surface, var(--surface, #121212));
+      border: 1px solid var(--color-border, var(--border, #262626));
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.8rem;
+      color: var(--color-text-primary, #e4e4e7);
+    }
+    .bh-minimal-hero .bh-cli-pill code {
+      font-family: inherit;
+      color: inherit;
+      background: transparent;
+      padding: 0;
+    }
+    .bh-minimal-hero .bh-copy-btn,
+    .bh-minimal-hero .bh-github-btn {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.74rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.35rem 0.7rem;
+      border: 1px solid var(--color-border, var(--border, #2e2e32));
+      background: transparent;
+      color: var(--color-text-primary, #fafafa);
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .bh-minimal-hero .bh-github-btn {
+      padding: 0.55rem 0.95rem;
+    }
+    .bh-minimal-hero .bh-copy-btn:hover,
+    .bh-minimal-hero .bh-github-btn:hover {
+      border-color: var(--color-accent-cyan, var(--accent, #06b6d4));
+      color: var(--color-accent-cyan, var(--accent, #06b6d4));
+    }
+  </style>
 </head>
 <body class="bg-zinc-950 text-zinc-100 min-h-screen selection:bg-brand-500 selection:text-zinc-950">
 
@@ -781,55 +908,20 @@
   </div>
 
   <!-- Hero Header -->
-  <header class="relative overflow-hidden pt-16 pb-12 border-b border-zinc-900 grid-pattern">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-medium text-zinc-400 mb-6 shadow-inner">
-        <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
-        Zero C/C++ FFI • 100% Safe Idiomatic Rust • 30/30 Tests Passing
-      </div>
-      <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-tight sm:leading-none">
-        Industry-grade 3D physics,<br/>
-        <span class="bg-gradient-to-r from-emerald-400 via-brand-500 to-teal-300 bg-clip-text text-transparent">engineered in pure Rust.</span>
-      </h1>
-      <p class="mt-6 text-lg sm:text-xl text-zinc-400 max-w-2xl mx-auto font-normal">
-        A high-performance port and fork of Erwin Coumans' <strong>Bullet 3 Physics SDK</strong>. Built for games, visual robotics, simulation, and WebAssembly with deterministic sub-stepping.
-      </p>
-
-      <div class="mt-8 flex flex-wrap justify-center gap-4">
-        <div class="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-zinc-900/90 border border-zinc-800 text-zinc-300 text-sm font-mono shadow-md">
-          <span class="text-brand-500 font-bold">$</span> cargo add --git https://github.com/bhubbard/bullet3-rs.git
-          <button onclick="navigator.clipboard.writeText('bullet3 = { package = &quot;bullet3-rs&quot;, git = &quot;https://github.com/bhubbard/bullet3-rs.git&quot; }'); alert('Copied dependency snippet to clipboard!');" 
-                  title="Copy Cargo.toml snippet" class="text-zinc-500 hover:text-white transition ml-1">
-            <i data-lucide="copy" class="w-4 h-4"></i>
-          </button>
-        </div>
-        <a href="#playground" class="px-5 py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-zinc-950 font-bold text-sm transition shadow-lg shadow-brand-500/20 inline-flex items-center gap-2">
-          <i data-lucide="play" class="w-4 h-4"></i>
-          Launch Live Visualizer
-        </a>
-      </div>
-
-      <!-- Quick Feature Pill Badges -->
-      <div class="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto text-left">
-        <div class="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/80">
-          <div class="text-brand-400 font-bold text-lg">15,000+</div>
-          <div class="text-xs text-zinc-400 font-medium mt-0.5">Physics Steps / Second</div>
-        </div>
-        <div class="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/80">
-          <div class="text-brand-400 font-bold text-lg">DBVT Tree</div>
-          <div class="text-xs text-zinc-400 font-medium mt-0.5">Dynamic Broadphase AABB</div>
-        </div>
-        <div class="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/80">
-          <div class="text-brand-400 font-bold text-lg">Projected GS</div>
-          <div class="text-xs text-zinc-400 font-medium mt-0.5">Sequential Impulse Solver</div>
-        </div>
-        <div class="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/80">
-          <div class="text-brand-400 font-bold text-lg">Multi-Body</div>
-          <div class="text-xs text-zinc-400 font-medium mt-0.5">Joints, Vehicles & Character</div>
+      <section class="hero bh-minimal-hero" id="overview">
+      <div class="bh-hero-inner">
+        <span class="bh-hero-eyebrow">RUST · 3D PHYSICS ENGINE</span>
+        <h1>bullet3-rs — Real-Time 3D Rigid-Body &amp; Multi-Body Physics Engine in Pure Rust</h1>
+        <p class="hero-lead">bullet3-rs is a 100% safe Rust port of Erwin Coumans&#x27; Bullet 3 Physics SDK for game engines, robotics, and scientific simulation. It implements dynamic AABB trees, GJK/EPA convex collision detection, sequential impulse constraints, and Featherstone articulated multi-body dynamics with deterministic execution.</p>
+        <div class="bh-hero-actions">
+          <div class="bh-cli-pill">
+            <code id="install-command-text">$ cargo add bullet3-rs</code>
+            <button type="button" class="bh-copy-btn" id="copyBtn" data-copy="cargo add bullet3-rs" onclick="navigator.clipboard.writeText('cargo add bullet3-rs');this.textContent='Copied';setTimeout(()=>this.textContent='Copy',1500);">Copy</button>
+          </div>
+          <a href="https://github.com/bhubbard/bullet3-rs" class="bh-github-btn" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
         </div>
       </div>
-    </div>
-  </header>
+    </section>
 
   <!-- Interactive 3D Physics Visualizer -->
   <section id="playground" class="py-12 border-b border-zinc-900">
